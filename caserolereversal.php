@@ -4,6 +4,32 @@ require_once 'caserolereversal.civix.php';
 use CRM_Caserolereversal_ExtensionUtil as E;
 
 /**
+ * Implements hook_civicrm_links().
+ *
+ * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_links
+ */
+function caserolereversal_civicrm_links($op, $objectName, $objectId, &$links, &$mask, &$values) {
+  $links[] = array(
+    'name' => ts('Reverse Case Roles'),
+    'url' => 'civicrm/caserolereversal',
+    'title' => 'Reverse Relationship Labels',
+    'qs' => 'reset=1&id=%%id%%',
+    'class' => 'no-popup',
+  );
+
+  if (1) {
+    $links[] = array(
+      'name' => ts('Reverse Case Roles') . $op,
+      'url' => 'civicrm/caserolereversal',
+      'title' => 'Reverse Relationship Labels',
+      'qs' => 'reset=1&id=%%id%%',
+      'class' => 'no-popup',
+    );
+  }
+}
+
+
+/**
  * Implements hook_civicrm_config().
  *
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_config

@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<menu>
+  <item>
+    <path>civicrm/caserolereversal</path>
+    <page_callback>CRM_Caserolereversal_Form_Caserolereversal</page_callback>
+    <title>Case Role Reverser</title>
+    <access_arguments>access CiviCRM</access_arguments>
+  </item>
+</menu>
