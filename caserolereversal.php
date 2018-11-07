@@ -9,17 +9,9 @@ use CRM_Caserolereversal_ExtensionUtil as E;
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_links
  */
 function caserolereversal_civicrm_links($op, $objectName, $objectId, &$links, &$mask, &$values) {
-  $links[] = array(
-    'name' => ts('Reverse Case Roles'),
-    'url' => 'civicrm/caserolereversal',
-    'title' => 'Reverse Relationship Labels',
-    'qs' => 'reset=1&id=%%id%%',
-    'class' => 'no-popup',
-  );
-
-  if (1) {
+  if ($op == 'basic.CRM_Contact_BAO_RelationshipType.page') {
     $links[] = array(
-      'name' => ts('Reverse Case Roles') . $op,
+      'name' => ts('Reverse Case Roles'),
       'url' => 'civicrm/caserolereversal',
       'title' => 'Reverse Relationship Labels',
       'qs' => 'reset=1&id=%%id%%',
