@@ -1,10 +1,13 @@
 {* HEADER *}
 
 {* TODO make UI More user friendly *}
-<p>You have chosen to update</p>
-<p><strong>Relationship Type Id:</strong> {$relationshipsDetails.id}</p>
-<p><strong>Relationship Description:</strong> {$relationshipsDetails.description}</p>
-<p>Currently the Relationship Labels for this type are:</p>
+<p>See Details on the Relationship Type you have choosen to update below:</p>
+<div><strong>Relationship Type ID:</strong> {$relationshipsDetails.id}</div>
+<div><strong>Relationship Description:</strong> {$relationshipsDetails.description}</div>
+<div><strong>Case Type(s) this relationship is used by:</strong> {$relationshipsDetails.caseTypes}</div>
+<div><strong>Number of Relationships that will be updated:</strong> {$relationshipsDetails.count}</div>
+
+<p><strong>Currently the Relationship Labels for this type are:</strong></p>
 <table>
   <thead>
     <tr>
@@ -39,7 +42,7 @@
     </tr>
   </tbody>
 </table>
-<p>Clicking Submit will change the labels to:</p>
+<p><strong>Clicking Submit will change the labels to:</strong></p>
 <table>
   <thead>
     <tr>
@@ -74,8 +77,6 @@
     </tr>
   </tbody>
 </table>
-<p><strong>{$relationshipsDetails.count}</strong> Relationships will be updated.</p>
-<p>Case Types this role is used in</p>
 <p>For more information on CiviCRM Relationships visit <a href="https://docs.civicrm.org/user/en/latest/organising-your-data/relationships/">the CiviCRM Documentation on Relationships</a></p>
 <p>To continue click switch</p>
 <div class="crm-submit-buttons">

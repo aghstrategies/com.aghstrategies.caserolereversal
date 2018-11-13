@@ -10,13 +10,19 @@ use CRM_Caserolereversal_ExtensionUtil as E;
  */
 function caserolereversal_civicrm_links($op, $objectName, $objectId, &$links, &$mask, &$values) {
   if ($op == 'basic.CRM_Contact_BAO_RelationshipType.page') {
-    $links[] = array(
-      'name' => ts('Reverse Case Roles'),
-      'url' => 'civicrm/caserolereversal',
-      'title' => 'Reverse Relationship Labels',
-      'qs' => 'reset=1&id=%%id%%',
-      'class' => 'no-popup',
-    );
+    // 1. Check if Relationship type is used for Cases
+    $caseRelationships = CRM_Caserolereversal_Form_Caserolereversal::getRelTypesUsedByCases();
+
+    // 2. If relationship is used for a case, add the link to reverse the role
+    if ($caseRelationships[$objectId]) {
+      $links[] = array(
+        'name' => ts('Reverse Case Roles'),
+        'url' => 'civicrm/caserolereversal',
+        'title' => 'Reverse Case Labels',
+        'qs' => 'reset=1&id=%%id%%',
+        'class' => 'no-popup',
+      );
+    }
   }
 }
 
