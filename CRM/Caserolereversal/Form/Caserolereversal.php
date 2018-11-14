@@ -96,22 +96,19 @@ class CRM_Caserolereversal_Form_Caserolereversal extends CRM_Core_Form {
       }
       $updatedDef = $caseType['definition'];
       if (!empty($caseType['definition']['caseRoles'])) {
-        // $updatedDef['caseRoles'][] = array('name' => 'Employer of');
-        // print_r($updatedDef); die();
         foreach ($caseType['definition']['caseRoles'] as $key => $details) {
-          if ($details['name'] == $relationshipType['name_b_a']) {
-            $updatedDef['caseRoles'][$key]['name'] = $relationshipType['name_a_b'];
+          if ($details['name'] == $relationshipType['label_a_b']) {
+            $updatedDef['caseRoles'][$key]['name'] = $relationshipType['label_a_b'];
+            try {
+              $updateCase = civicrm_api3('caseType', 'create', array(
+                'id' => $caseTypeId,
+                'definition' => $updatedDef,
+              ));
+            }
+            catch (CiviCRM_API3_Exception $e) {
+              CRM_Core_Error::debug_log_message("com.aghstrategies.caserolereversal API error \n" . $e->getMessage());
+            }
           }
-        }
-        // TODO this is not working figure out how to update casetype  xml
-        try {
-          $updateCase = civicrm_api3('caseType', 'create', array(
-            'id' => $caseTypeId,
-            'definition' => $updatedDef,
-          ));
-        }
-        catch (CiviCRM_API3_Exception $e) {
-          CRM_Core_Error::debug_log_message("com.aghstrategies.caserolereversal API error \n" . $e->getMessage());
         }
       }
     }
@@ -121,6 +118,10 @@ class CRM_Caserolereversal_Form_Caserolereversal extends CRM_Core_Form {
     CRM_Utils_System::redirect(CRM_Utils_System::url('civicrm/admin/reltype'));
   }
 
+  /**
+   * Looks up all the relationship types used by cases
+   * @return array an array where the key is the relationship type id and the value is an array of the casetypes that use that relationship type
+   */
   public function getRelTypesUsedByCases() {
     $caseRelationships = array();
     try {
@@ -154,6 +155,11 @@ class CRM_Caserolereversal_Form_Caserolereversal extends CRM_Core_Form {
     return $caseRelationships;
   }
 
+  /**
+   * Gets Relationship Details (names, labels etc.)
+   * @param int $relTypeid relationship type id
+   * @return array           relationship details
+   */
   public function getRelationshipDetails($relTypeid) {
     // Get Relationship Details
     try {
