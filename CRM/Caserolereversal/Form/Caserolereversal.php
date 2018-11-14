@@ -96,6 +96,8 @@ class CRM_Caserolereversal_Form_Caserolereversal extends CRM_Core_Form {
       }
       $updatedDef = $caseType['definition'];
       if (!empty($caseType['definition']['caseRoles'])) {
+        // $updatedDef['caseRoles'][] = array('name' => 'Employer of');
+        // print_r($updatedDef); die();
         foreach ($caseType['definition']['caseRoles'] as $key => $details) {
           if ($details['name'] == $relationshipType['name_b_a']) {
             $updatedDef['caseRoles'][$key]['name'] = $relationshipType['name_a_b'];
