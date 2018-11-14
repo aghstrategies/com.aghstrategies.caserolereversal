@@ -10,16 +10,8 @@ use CRM_Caserolereversal_ExtensionUtil as E;
 class CRM_Caserolereversal_Form_Caserolereversal extends CRM_Core_Form {
   public function buildQuickForm() {
     if (!empty($_GET['id'])) {
-
-      // Get Relationship Details
-      try {
-        $relationshipType = civicrm_api3('RelationshipType', 'getsingle', [
-          'id' => $_GET['id'],
-        ]);
-      }
-      catch (CiviCRM_API3_Exception $e) {
-        CRM_Core_Error::debug_log_message("com.aghstrategies.caserolereversal API error \n" . $e->getMessage());
-      }
+      $relTypeId = $_GET['id'];
+      $relationshipType = self::getRelationshipDetails($_GET['id']);
       if (!empty($relationshipType['id'])) {
         // Get Number of Relationships that will be changed
         try {
@@ -42,12 +34,8 @@ class CRM_Caserolereversal_Form_Caserolereversal extends CRM_Core_Form {
         $this->assign('relationshipsDetails', $relationshipType);
       }
     }
-    // Select Relationship Type
-    $this->addEntityRef('rel_type', ts('Select Relationship Type'), array(
-      'entity' => 'relationshipType',
-      'placeholder' => ts('- Select Relationship Type -'),
-      'select' => array('minimumInputLength' => 0),
-    ));
+    // Set Relationship Type
+    $this->addElement('hidden', 'rel_type', ts($relTypeId), array('id' => 'rel_type'));
 
     $this->addButtons(array(
       array(
@@ -55,7 +43,7 @@ class CRM_Caserolereversal_Form_Caserolereversal extends CRM_Core_Form {
         'name' => E::ts('Switch'),
         'isDefault' => TRUE,
         // Change the icon for the button
-        'crm-icon' => 'fa-random',
+        'icon' => 'fa-random',
       ),
     ));
 
@@ -65,13 +53,70 @@ class CRM_Caserolereversal_Form_Caserolereversal extends CRM_Core_Form {
   }
 
   public function postProcess() {
-    // TODO Switch relationship types (labels names and contacttype a/b) using the API
-    // TODO switch contact ids in the database for all relationships of this type using a db query
-    // TODO update the success message
-    CRM_Core_Session::setStatus(E::ts('You picked color "%1"', array(
-      1 => $options[$values['favorite_color']],
-    )));
+    $values = $this->controller->exportValues();
+    $relationshipType = self::getRelationshipDetails($values['rel_type']);
+
+    // Switch relationship types (labels names and contacttype a/b) using the API
+    try {
+      $relTypeInfo = civicrm_api3('relationshipType', 'create', array(
+        'id' => $relationshipType['id'],
+        'name_a_b' => $relationshipType['name_b_a'],
+        'label_a_b' => $relationshipType['label_b_a'],
+        'name_b_a' => $relationshipType['name_a_b'],
+        'label_b_a' => $relationshipType['label_a_b'],
+        'contact_type_a' => $relationshipType['contact_type_b'],
+        'contact_type_b' => $relationshipType['contact_type_a'],
+      ));
+    }
+    catch (CiviCRM_API3_Exception $e) {
+      CRM_Core_Error::debug_log_message("com.aghstrategies.caserolereversal API error \n" . $e->getMessage());
+    }
+    if (!empty($relTypeInfo['id'])) {
+      CRM_Core_Session::setStatus(E::ts('the relationship type with id %1 has been updated', array(
+        1 => $relTypeInfo['id'],
+      )));
+    }
+
+    // switch contact ids in the database for all relationships of this type using a db query
+    $query = "UPDATE civicrm_relationship
+    SET contact_id_b=(@temp:=contact_id_b), contact_id_b = contact_id_a, contact_id_a = @temp
+    WHERE relationship_type_id = {$values['rel_type']}";
+    $updateRelationships = CRM_Core_DAO::executeQuery($query);
+
+    // TODO update case roles
+    $relTypesUsedByCases = self::getRelTypesUsedByCases();
+    foreach ($relTypesUsedByCases[$values['rel_type']] as $caseTypeId => $caseTypeName) {
+      try {
+        $caseType = civicrm_api3('CaseType', 'getSingle', [
+          'id' => $caseTypeId,
+        ]);
+      }
+      catch (CiviCRM_API3_Exception $e) {
+        CRM_Core_Error::debug_log_message("com.aghstrategies.caserolereversal API error \n" . $e->getMessage());
+      }
+      $updatedDef = $caseType['definition'];
+      if (!empty($caseType['definition']['caseRoles'])) {
+        foreach ($caseType['definition']['caseRoles'] as $key => $details) {
+          if ($details['name'] == $relationshipType['name_b_a']) {
+            $updatedDef['caseRoles'][$key]['name'] = $relationshipType['name_a_b'];
+          }
+        }
+        // TODO this is not working figure out how to update casetype  xml
+        try {
+          $updateCase = civicrm_api3('caseType', 'create', array(
+            'id' => $caseTypeId,
+            'definition' => $updatedDef,
+          ));
+        }
+        catch (CiviCRM_API3_Exception $e) {
+          CRM_Core_Error::debug_log_message("com.aghstrategies.caserolereversal API error \n" . $e->getMessage());
+        }
+      }
+    }
     parent::postProcess();
+
+    // redirect back to the relationships page
+    CRM_Utils_System::redirect(CRM_Utils_System::url('civicrm/admin/reltype'));
   }
 
   public function getRelTypesUsedByCases() {
@@ -87,7 +132,7 @@ class CRM_Caserolereversal_Form_Caserolereversal extends CRM_Core_Form {
     // Array of relationship name => ids of case types taht use that relationship
     foreach ($caseInfo['values'] as $caseTypeId => $caseType) {
       foreach ($caseType['definition']['caseRoles'] as $key => $relationship) {
-        $caseRelationships[$relationship['name']][] = $caseType['title'];
+        $caseRelationships[$relationship['name']][$caseType['id']] = $caseType['title'];
       }
     }
     foreach ($caseRelationships as $relName => $caseTypes) {
@@ -105,6 +150,19 @@ class CRM_Caserolereversal_Form_Caserolereversal extends CRM_Core_Form {
       unset($caseRelationships[$relName]);
     }
     return $caseRelationships;
+  }
+
+  public function getRelationshipDetails($relTypeid) {
+    // Get Relationship Details
+    try {
+      $relationshipType = civicrm_api3('RelationshipType', 'getsingle', [
+        'id' => $relTypeid,
+      ]);
+    }
+    catch (CiviCRM_API3_Exception $e) {
+      CRM_Core_Error::debug_log_message("com.aghstrategies.caserolereversal API error \n" . $e->getMessage());
+    }
+    return $relationshipType;
   }
 
   /**
