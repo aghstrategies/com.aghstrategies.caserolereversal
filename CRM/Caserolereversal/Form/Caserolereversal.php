@@ -55,10 +55,11 @@ class CRM_Caserolereversal_Form_Caserolereversal extends CRM_Core_Form {
   public function postProcess() {
     $values = $this->controller->exportValues();
     $relationshipType = self::getRelationshipDetails($values['rel_type']);
+    $relTypesUsedByCases = self::getRelTypesUsedByCases();
 
     // Switch relationship types (labels names and contacttype a/b) using the API
     try {
-      $relTypeInfo = civicrm_api3('relationshipType', 'create', array(
+      $relTypeInfo = civicrm_api3('relationshipType', 'update', array(
         'id' => $relationshipType['id'],
         'name_a_b' => $relationshipType['name_b_a'],
         'label_a_b' => $relationshipType['label_b_a'],
@@ -84,7 +85,6 @@ class CRM_Caserolereversal_Form_Caserolereversal extends CRM_Core_Form {
     $updateRelationships = CRM_Core_DAO::executeQuery($query);
 
     // TODO update case roles
-    $relTypesUsedByCases = self::getRelTypesUsedByCases();
     foreach ($relTypesUsedByCases[$values['rel_type']] as $caseTypeId => $caseTypeName) {
       try {
         $caseType = civicrm_api3('CaseType', 'getSingle', [
@@ -97,7 +97,7 @@ class CRM_Caserolereversal_Form_Caserolereversal extends CRM_Core_Form {
       $updatedDef = $caseType['definition'];
       if (!empty($caseType['definition']['caseRoles'])) {
         foreach ($caseType['definition']['caseRoles'] as $key => $details) {
-          if ($details['name'] == $relationshipType['label_a_b']) {
+          if ($details['name'] == $relationshipType['label_b_a']) {
             $updatedDef['caseRoles'][$key]['name'] = $relationshipType['label_a_b'];
             try {
               $updateCase = civicrm_api3('caseType', 'create', array(
@@ -142,7 +142,7 @@ class CRM_Caserolereversal_Form_Caserolereversal extends CRM_Core_Form {
       try {
         $relationshipType = civicrm_api3('RelationshipType', 'getsingle', [
           'return' => ["id"],
-          'name_b_a' => $relName,
+          'label_b_a' => $relName,
         ]);
       }
       catch (CiviCRM_API3_Exception $e) {
